@@ -1,48 +1,78 @@
 'use client';
-import { useState } from 'react';
+
+import { useCallback } from 'react';
 import {
   Background,
   BackgroundVariant,
   Controls,
-  Panel,
   ReactFlow,
-  applyEdgeChanges,
-  // applyNodeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import useNodes from '../hooks/useNodesHook';
+
+import useFlowStore from '../store/useFlowStore';
+import CustomNode from './CustomNode';
+import CustomEdge from './CustomEdge';
+import Sidebar from './Sidebar';
+import JsonPreview from './JsonPreview';
+import Toolbar from './Toolbar';
+
+const nodeTypes = {
+  default: CustomNode,
+};
+
+const edgeTypes = {
+  default: CustomEdge,
+};
 
 const Canvas = () => {
-  const { initialNodes } = useNodes();
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    selectNode,
+  } = useFlowStore();
 
-  const initialEdges = [{ id: 'n1-n2', source: 'n1', target: 'n2' }];
+  const handleNodeClick = useCallback(
+    (_event: React.MouseEvent, node: { id: string }) => {
+      selectNode(node.id);
+    },
+    [selectNode]
+  );
 
-  const [nodes, setNodes] = useState(initialNodes);
-  const [edges, setEdges] = useState(initialEdges);
-
-  const onEdgeChange = () => {
-    setEdges((e) => applyEdgeChanges(e, edges));
-  };
-
-  // const onNodesChange = () => {
-  //   setNodes((n) => applyNodeChanges(n, nodes));
-  // };
-
-  console.log(nodes, 'nodes');
+  const handlePaneClick = useCallback(() => {
+    selectNode(null);
+  }, [selectNode]);
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onEdgesChange={onEdgeChange}
-        // onNodesChange={onNodesChange}
-        fitView
-      >
-        <Background variant={BackgroundVariant.Dots} color='white' />
-        <Controls />
-        <Panel position='top-left'>top-left</Panel>
-      </ReactFlow>
+    <div className="flex h-screen w-screen">
+      <div className="flex-1 relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          defaultEdgeOptions={{
+            type: 'default',
+            animated: true,
+            style: { stroke: '#94a3b8', strokeWidth: 2 },
+          }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="#e2e8f0" />
+          <Controls />
+          <Toolbar />
+        </ReactFlow>
+      </div>
+      
+      <Sidebar />
+      <JsonPreview />
     </div>
   );
 };
